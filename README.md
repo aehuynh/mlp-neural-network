@@ -1,2 +1,1 @@
-# mlp-neural-network
-Multilayer Perceptron
+# Multi-Layer Perceptron
