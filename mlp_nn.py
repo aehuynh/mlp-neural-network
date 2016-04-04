@@ -72,11 +72,10 @@ class NeuralNetwork:
             Vector with shape(number samples, 1) that specifies the index
             of the expected class
         """
-        last_delta = np.array(o[-1])
-        last_delta[range(len(last_delta)), Y] -= 1
+        error = np.array(o[-1])
+        error[range(len(error)), Y] -= 1
 
-        last_delta *= self.layers[-1].activate_p(o[-1])
-        deltas = [last_delta]
+        deltas = [error * self.layers[-1].activate_p(o[-1])]
 
         # Calculate deltas
         for i in range(len(self.layers) - 2, -1, -1):
