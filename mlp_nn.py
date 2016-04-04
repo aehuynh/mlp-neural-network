@@ -1,22 +1,20 @@
 import numpy as np
-from toolbox import is_valid_activation, activation_prime_func, activation_func, cost_func, is_valid_cost_func
+from toolbox import is_valid_activation, get_activation, get_activation_prime,get_cost_func, is_valid_cost_func
 
 class Layer:
     """Neural network layer"""
 
     def __init__(self, num_in, num_nodes, learn_rate, a_type="tanh", weight_decay=None):
-        if not is_valid_activation(a_type):
-            raise NotImplementedError("Bad activation function type: %s" % a_type)
-
+        self.activate = get_activation(a_type)
+        self.activate_p = get_activation_prime(a_type)
         self.W = np.random.randn(num_in, num_nodes) / np.sqrt(num_in)
         self.b = np.zeros((1, num_nodes))
-        self.a_type = a_type
         self.learn_rate = learn_rate
         self.weight_decay = weight_decay
 
     def transform(self, o):
         z = o.dot(self.W) + self.b
-        return activation_func(self.a_type)(z)
+        return self.activate(z)
 
     def update_weights(self, delta, o):
         dW = (o.T).dot(delta)
@@ -28,12 +26,10 @@ class Layer:
         self.W -= self.learn_rate * dW
 
 class NeuralNetwork:
+    "Multi-Layer Perceptron (ANN)"
 
     def __init__(self, layer_sizes, layer_a_types, learn_rate, cost_type="cross entropy loss", weight_decay=None):
-        if not is_valid_cost_func(cost_type):
-            raise NotImplementedError("Bad cost function type: %s" % cost_type)
-
-        self.cost_type = cost_type
+        self.cost_func = get_cost_func(cost_type)
         self.layers = []
         for i in range(len(layer_sizes) - 1):
             layer = Layer(layer_sizes[i], layer_sizes[i+1], learn_rate,layer_a_types[i],  weight_decay)
@@ -47,7 +43,8 @@ class NeuralNetwork:
         X : numpy.ndarray
             Input data with shape (number of samples, number of features)
         Y : numpy.ndarray
-            Expected output
+            Vector with shape(number samples, 1) that specifies the index
+            of the expected class
         """
         for k in range(1, epochs + 1):
             o = self.forward_prop(X)
@@ -72,22 +69,24 @@ class NeuralNetwork:
         o : list(numpy.ndarray)
             List of forward propogation output from each layer
         Y : numpy.ndarray
-            Expected output
+            Vector with shape(number samples, 1) that specifies the index
+            of the expected class
         """
         last_delta = np.array(o[-1])
         last_delta[range(len(last_delta)), Y] -= 1
 
+        last_delta *= self.layers[-1].activate_p(o[-1])
         deltas = [last_delta]
 
         # Calculate deltas
         for i in range(len(self.layers) - 2, -1, -1):
             W = self.layers[i+1].W
-            delta = deltas[-1].dot(W.T) * activation_prime_func(self.layers[i].a_type)(o[i+1])
+            delta = deltas[-1].dot(W.T) * self.layers[i].activate_p(o[i+1])
             deltas.append(delta)
         deltas.reverse()
 
         # Update weights
-        for l in range(len(self.layers) - 1):
+        for l in range(len(self.layers) ):
             self.layers[l].update_weights(deltas[l], o[l])
 
     def predict(self,X):
@@ -96,4 +95,4 @@ class NeuralNetwork:
 
     def cost(self,X, Y):
         result = self.forward_prop(X)[-1]
-        return cost_func(self.cost_type)(result, Y)
+        return self.cost_func(result, Y)

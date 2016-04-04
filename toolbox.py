@@ -22,40 +22,36 @@ def cross_entropy_loss(result, expected):
     data_loss = np.sum(cross_ent_err)
     return 1./num_samples * data_loss
 
-activation_function = {
+activation_functions = {
     "sigmoid" : sigmoid,
     "tanh" : tanh,
     "softmax" : softmax
 }
 
-activation_prime_function = {
+activation_prime_functions = {
     "sigmoid": sigmoid_prime,
-    "tanh" : tanh_prime
+    "tanh" : tanh_prime,
+    "softmax" : sigmoid_prime
 }
 
-def is_valid_activation(name):
-    return name in activation_function
+def is_valid_activation(a_type):
+    return a_type in activation_functions
 
+def get_activation(a_type):
+    if not is_valid_activation(a_type):
+        raise NotImplementedError("Bad activation function type: %s" % a_type)
+    return activation_functions[a_type]
 
-def activation_func(name):
-    if not is_valid_activation(name):
-        raise NotImplementedError("Bad activation function name: %s" % name)
+def get_activation_prime(a_type):
+    if not is_valid_activation(a_type):
+        raise NotImplementedError("Bad activation function type: %s" % a_type)
+    return activation_prime_functions[a_type]
 
-    return activation_function[name]
-
-def activation_prime_func(name):
-    if name not in activation_prime_function:
-        raise NotImplementedError("No activation prime function found for: %s" % name)
-    return activation_prime_function[name]
-
-cost_function = {
+cost_functions = {
     "cross entropy loss": cross_entropy_loss
 }
 
-def is_valid_cost_func(name):
-    return name in cost_function
-
-def cost_func(name):
-    if not is_valid_cost_func(name):
+def get_cost_func(name):
+    if name not in cost_functions:
         raise NotImplementedError("Bad cost function: %s" % name)
-    return cost_function[name]
+    return cost_functions[name]
