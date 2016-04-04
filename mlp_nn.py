@@ -4,7 +4,7 @@ from toolbox import get_activation, get_activation_prime, get_cost_func
 class Layer:
     """Neural network layer"""
 
-    def __init__(self, num_in, num_nodes, learn_rate, a_type="tanh", weight_decay=None):
+    def __init__(self, num_in, num_nodes, learn_rate, a_type="tanh", weight_decay=0):
         self.activate = get_activation(a_type)
         self.activate_p = get_activation_prime(a_type)
         self.W = np.random.randn(num_in, num_nodes) / np.sqrt(num_in)
@@ -18,9 +18,8 @@ class Layer:
 
     def update_weights(self, delta, o):
         dW = (o.T).dot(delta)
-
-        if self.weight_decay is not None:
-            dW += self.weight_decay * self.W
+        # L2 regularization
+        dW += self.weight_decay * self.W
 
         self.b -= self.learn_rate * np.sum(delta, axis=0)
         self.W -= self.learn_rate * dW
@@ -28,7 +27,19 @@ class Layer:
 class NeuralNetwork:
     "Multi-Layer Perceptron (ANN)"
 
-    def __init__(self, layer_sizes, layer_a_types, learn_rate, cost_type="cross entropy loss", weight_decay=None):
+    def __init__(self, layer_sizes, layer_a_types, learn_rate, cost_type="cross entropy loss", weight_decay=0):
+        """
+        Parameters
+        ---------
+        layer_sizes : list(int)
+            List of the size of each layer starting from the input layer
+        layer_a_types : list(str)
+            List of the activation function name of each layer
+        cost_type : str
+            Name of the cost function to use
+        weight_decay : float
+            L2 regularization parameter
+        """
         self.cost_func = get_cost_func(cost_type)
         self.layers = []
         for i in range(len(layer_sizes) - 1):
