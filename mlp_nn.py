@@ -1,5 +1,5 @@
 import numpy as np
-from toolbox import is_valid_activation, get_activation, get_activation_prime,get_cost_func, is_valid_cost_func
+from toolbox import get_activation, get_activation_prime, get_cost_func
 
 class Layer:
     """Neural network layer"""
