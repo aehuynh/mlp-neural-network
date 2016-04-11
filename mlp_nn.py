@@ -1,6 +1,17 @@
 import numpy as np
 from toolbox import get_activation, get_activation_prime, get_cost_func
 
+NN_settings = {
+    "learn_rate" : 0.001,
+    # L2 regularization parameter
+    "weight_decay" : 0,
+    # (number of neurons in layer, activation function of layer)
+    # The first element is the input layer with no activation function
+    "layers" : [ (2, None) , (7, "tanh"), (2, "softmax") ],
+    # Name of cost function
+    "cost_type" : "cross entropy loss",
+}
+
 class Layer:
     """Neural network layer"""
 
@@ -13,37 +24,31 @@ class Layer:
         self.weight_decay = weight_decay
 
     def transform(self, o):
-        z = o.dot(self.W) + self.b
+        z = np.dot(o, self.W) + self.b
         return self.activate(z)
 
     def update_weights(self, delta, o):
-        dW = (o.T).dot(delta)
+        dW = np.dot(o.T, delta)
         # L2 regularization
         dW += self.weight_decay * self.W
 
         self.b -= self.learn_rate * np.sum(delta, axis=0)
         self.W -= self.learn_rate * dW
 
+
 class NeuralNetwork:
     "Multi-Layer Perceptron (ANN)"
 
-    def __init__(self, layer_sizes, layer_a_types, learn_rate, cost_type="cross entropy loss", weight_decay=0):
-        """
-        Parameters
-        ---------
-        layer_sizes : list(int)
-            List of the size of each layer starting from the input layer
-        layer_a_types : list(str)
-            List of the activation function name of each layer
-        cost_type : str
-            Name of the cost function to use
-        weight_decay : float
-            L2 regularization parameter
-        """
-        self.cost_func = get_cost_func(cost_type)
+    def __init__(self, settings=NN_settings):
+        self.cost_func = get_cost_func(settings["cost_type"])
         self.layers = []
-        for i in range(len(layer_sizes) - 1):
-            layer = Layer(layer_sizes[i], layer_sizes[i+1], learn_rate,layer_a_types[i],  weight_decay)
+
+        for i in range(len(settings["layers"])-1):
+            layer = Layer(settings["layers"][i][0],
+                          settings["layers"][i+1][0],
+                          settings["learn_rate"],
+                          settings["layers"][i+1][1],
+                          settings["weight_decay"])
             self.layers.append(layer)
 
     def fit(self, X, Y, epochs):
@@ -78,7 +83,7 @@ class NeuralNetwork:
         Parameters
         ---------
         o : list(numpy.ndarray)
-            List of forward propogation output from each layer
+            List of forward propagation output from each layer
         Y : numpy.ndarray
             Vector with shape(number samples, 1) that specifies the index
             of the expected class
@@ -91,7 +96,7 @@ class NeuralNetwork:
         # Calculate deltas
         for i in range(len(self.layers) - 2, -1, -1):
             W = self.layers[i+1].W
-            delta = deltas[-1].dot(W.T) * self.layers[i].activate_p(o[i+1])
+            delta = np.dot(deltas[-1], W.T) * self.layers[i].activate_p(o[i+1])
             deltas.append(delta)
         deltas.reverse()
 
